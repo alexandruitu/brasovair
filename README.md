@@ -1,2 +1,3 @@
 # brasovair
-collection of tools for monitoring teh Brasov air
+This is a collection of tools for monitoring the fro Brasov.
+It is based on collecting data from uRADMonitor sensors
