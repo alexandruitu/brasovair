@@ -1,0 +1,13 @@
+
+# Python Files
+__pycache__
+.mypy_cache
+build/
+dist/
+venv/
+.venv/
+.env/
+.coverage*
+htmlcov/
+
+

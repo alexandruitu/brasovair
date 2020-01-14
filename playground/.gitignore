@@ -1,0 +1,19 @@
+# Python Files
+__pycache__
+.mypy_cache
+build/
+dist/
+.ipynb_checkpoints/
+venv/
+.venv/
+.env/
+.coverage*
+htmlcov/
+
+
+
+
+# IDEs
+.idea/
+.vscode/
+.vs
