@@ -2,7 +2,6 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/brasovair/web_app
-/brasovair/web_app/.cache
-/brasovair/web_app/.vscode
-/brasovair/web_app/node_modules
+./web_app/.cache
+./web_app/.vscode
+./web_app/node_modules
