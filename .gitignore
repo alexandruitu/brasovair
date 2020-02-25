@@ -1,13 +1,8 @@
+################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
 
-# Python Files
-__pycache__
-.mypy_cache
-build/
-dist/
-venv/
-.venv/
-.env/
-.coverage*
-htmlcov/
-
-
+/brasovair/web_app
+/brasovair/web_app/.cache
+/brasovair/web_app/.vscode
+/brasovair/web_app/node_modules
