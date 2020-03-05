@@ -1,19 +1,20 @@
 import 'ol/ol.css';
 import Feature from 'ol/Feature';
 import Geolocation from 'ol/Geolocation';
-import {fromLonLat} from 'ol/proj';
+import { fromLonLat } from 'ol/proj';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import Point from 'ol/geom/Point';
 import { Heatmap as HeatmapLayer, Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
 import { OSM, Vector as VectorSource } from 'ol/source';
-import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 
 var urad_url = "https://m9sdldu09a.execute-api.us-east-1.amazonaws.com/uradbvair";
-var sensor_data = [{"deviceid": "82000169", "pm1": 4, "pm25": 6, "pm10": 6, "temperature": "27.37", "latitude": 45.645893, "longitude": 25.599471}, {"deviceid": "1600009C", "pm1": 6, "pm25": 9, "pm10": 12, "temperature": "17.94", "latitude": 45.6718, "longitude": 25.6006}, {"deviceid": "160000A9", "pm1": 9, "pm25": 21, "pm10": 27, "temperature": "17.63", "latitude": 45.6568, "longitude": 25.5917}, {"deviceid": "1600009B", "pm1": 12, "pm25": 17, "pm10": 19, "temperature": "19.21", "latitude": 45.653509, "longitude": 25.56612}, {"deviceid": "160000A7", "pm1": 6, "pm25": 15, "pm10": 19, "temperature": "18.90", "latitude": 45.704032, "longitude": 25.640955}, {"deviceid": "160000C4", "pm1": 3, "pm25": 10, "pm10": 14, "temperature": "23.60", "latitude": 45.670103, "longitude": 25.617966}, {"deviceid": "160000C3", "pm1": 3, "pm25": 11, "pm10": 14, "temperature": "25.11", "latitude": 45.6536, "longitude": 25.599}, {"deviceid": "160000C5", "pm1": 7, "pm25": 17, "pm10": 20, "temperature": "17.39", "latitude": 45.6626667, "longitude": 25.5866871}, {"deviceid": "160000AC", "pm1": 8, "pm25": 21, "pm10": 30, "temperature": "17.71", "latitude": 45.702594, "longitude": 25.456175}, {"deviceid": "82000149", "pm1": 8, "pm25": 10, "pm10": 11, "temperature": "29.29", "latitude": 45.7537, "longitude": 25.633899}];
-
+var sensor_data = [];
+var color_palette = ["#52B947", "#F3EC19", "#F47D1E", "#ED1D24", "#7E2B7D"];
 var blur = document.getElementById('blur');
 var radius = document.getElementById('radius');
+var pmHeatmapScaller = 'pm25';
 
 var view = new View({
   center: fromLonLat([25.60, 45.674]),
@@ -25,10 +26,11 @@ var map = new Map({
   target: 'map',
   view: view
 });
-
+//location related
 var positionFeature = new Feature();
 var accuracyFeature = new Feature();
 var locationFeaturesSources = new VectorSource();
+
 var sensorFeaturesSources = new VectorSource();
 var pmFeaturesSources = new VectorSource();
 locationFeaturesSources.addFeatures([positionFeature, accuracyFeature]);
@@ -38,6 +40,7 @@ var heatmap = new HeatmapLayer({
   source: sensorFeaturesSources,
   blur: parseInt(blur.value, 10),
   radius: parseInt(radius.value, 10)
+  //gradient: color_palette
 });
 
 var sensorStyle = new Style({
@@ -47,8 +50,19 @@ var sensorStyle = new Style({
       color: '#d12e57'
     }),
     stroke: new Stroke({
-      color: '#fff',
+      color: '#F10000',
       width: 2
+    })
+  }),
+  text: new Text({
+    font: '12px Calibri,sans-serif',
+    fill: new Fill({
+      color: '#d12e57'
+    }),
+    text: "bla",
+    stroke: new Stroke({
+      color: '#F10000',
+      width: 3
     })
   })
 });
@@ -58,7 +72,7 @@ var locationStyle = new Style({
   image: new CircleStyle({
     radius: 6,
     fill: new Fill({
-      color: '#3399CC'
+      color: '#52B947'
     }),
     stroke: new Stroke({
       color: '#fff',
@@ -88,39 +102,48 @@ var makeRequest = function (url, method) {
   });
 };
 
-document.addEventListener('DOMContentLoaded', (event) => {
-  // makeRequest(urad_url, 'GET').then(function (response) {
-  //   sensor_data = response;
-  //   console.log(sensor_data);
-    for (let sensor of sensor_data) {
-      let latlong = [sensor['longitude'], sensor['latitude']];
-      let coordinates = fromLonLat(latlong);  
-      let sensor_coords = new Point(coordinates);
-      let sensorFeature = new Feature();      
-      sensorFeature.setGeometryName(sensor['pm25']);
-      sensorFeature.setGeometry(sensor_coords);
-      sensorFeature.setStyle(sensorStyle);
-      //sensorFeature.setGeometryName(sensor['deviceid']);
-      //let pm25 = sensor['pm25'];
-      //sensorFeature.set('weight', pm25);
-      sensorFeaturesSources.addFeature(sensorFeature);      
-    };
-  //})
-});
+function updateHeatmap() {
 
-heatmap.getSource().on('addfeature', function(event) {
+  for (let sensor of JSON.parse(sensor_data)) {
+    let latlong = [sensor['longitude'], sensor['latitude']];
+    let coordinates = fromLonLat(latlong);
+    let sensor_coords = new Point(coordinates);
+    let sensorFeature = new Feature();
+    sensorFeature.setGeometryName(sensor[pmHeatmapScaller]);
+    sensorFeature.setGeometry(sensor_coords);
+    sensorStyle.setText(sensor[pmHeatmapScaller]);
+    sensorFeature.setStyle(sensorStyle);
+    //sensorFeature.setGeometryName(sensor['deviceid']);
+    //let pm25 = sensor['pm25'];
+    //sensorFeature.set('weight', pm25);
+    //labelStyle.setText()
+    //console.log(heatmap.getGradient());
+    sensorFeaturesSources.addFeature(sensorFeature);
+  }
+};
+
+document.addEventListener('DOMContentLoaded', (event) => {
+  makeRequest(urad_url, 'GET').then(function (response) {
+    sensor_data = response;
+    updateHeatmap();
+  })
+}
+);
+
+heatmap.getSource().on('addfeature', function (event) {
   let pm = event.feature.getGeometryName();
-  let upperVal = 30;
-  if (pm>upperVal){
+  let upperVal = 40;
+  if (pm > upperVal) {
     pm = upperVal
   }
-  var magnitude = parseFloat(pm)/upperVal;
-  console.log(magnitude);
+  var magnitude = parseFloat(pm) / upperVal;
+  //console.log(magnitude);
   event.feature.set('weight', magnitude);
+  event.feature.set('radius', pm * 1, 5);
 });
 
-var geolocation = new Geolocation({  
-  trackingOptions: { enableHighAccuracy: true},
+var geolocation = new Geolocation({
+  trackingOptions: { enableHighAccuracy: true },
   projection: view.getProjection()
 });
 
@@ -155,9 +178,9 @@ geolocation.on('change:accuracyGeometry', function () {
 
 geolocation.on('change:position', function () {
   let coordinates = geolocation.getPosition();
-  //console.log(coordinates);
   positionFeature.setGeometry(coordinates ?
     new Point(coordinates) : null);
+  //positionFeature.getStyle().setText("ALEX");
 });
 
 var blurHandler = function () {
@@ -171,6 +194,23 @@ var radiusHandler = function () {
 };
 radius.addEventListener('input', radiusHandler);
 radius.addEventListener('change', radiusHandler);
+
+var rad = document.getElementsByName('pmSelector');
+var prev = null;
+if (rad != null) {
+  for (var i = 0; i < rad.length; i++) {
+    rad[i].addEventListener('change', function () {
+      if (this !== prev) {
+        prev = this;
+      }
+      pmHeatmapScaller = this.id;
+      heatmap.getSource().clear();
+      makeRequest(urad_url, 'GET').then(function (response) {
+        updateHeatmap(response);
+      });
+    });
+  };
+}
 
 new VectorLayer({
   map: map,
