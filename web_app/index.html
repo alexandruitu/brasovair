@@ -11,21 +11,31 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  <script src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
+  <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
   <style>
     .map {
+      position: left;        
       width: 100%;
-      height: 600px;
+      height: 550px;
+    /* left: 20px;
+    top: 20px; */
+    /* -moz-border-radius: 15px;
+    border-radius: 15px; */
+    /* border: 1px solid black; 
+    overflow: hidden;
+       */
     }
   </style>
 </head>
 
-<body>
+<body style="background-color: azure;">
   <!-- <h2 align="center">Calitatea aerului in Brasov</h2> -->
   <!-- <p>Aici gasiti valorile senzorilor urad de monitorizare a aerului, instalati in Brasov</p>             -->
-  <img src="brasovair.jpg" alt="Brasov, Roamnia" width=100% height="236" >
+  <!-- <img src="brasovair.jpg" alt="Brasov, Roamnia" width=100% height="236" > -->
 
-  <div class="bs-example" style="background-color: yellowgreen;">
-    <div class="btn-group btn-group-toggle" >
+  <div class="bs-example" style="background-color: azure;">
+    <div class="btn-group btn-group-toggle">
       <label class="btn btn-primary btn-sm">
         <input id="track" type="checkbox" />snap to location
       </label>
@@ -48,18 +58,20 @@
     </div>
   </div>
 
-  <div id="map" class="map container rounded" style="background-color: yellowgreen;"></div>
-  <div id="overlay"
-    style="background-color: transparent; border-radius: 10px; font-size:small; border: 1px solid black; padding: 5px 10px; opacity: 0.5;">
-  </div>
-  <div id="info" style="background-color: yellowgreen;">
-      <p class="font-weight-bolder" >&copy; <a href="mailto:alexandru.itu@gmail.com">Alexandru Itu</a> <p>
-  </div>
+  <div id="map" class="map container rounded"  style="background-color: azure;"></div>
 
-  <form >
+  <div id="chartContainer" style="height: 300px; width: 90%;"></div>
+  <div id="info" style="background-color: azure;">
+    <p class="font-weight-bolder">&copy; <a href="mailto:alexandru.itu@gmail.com">Alexandru Itu</a>
+      <p>
+  </div>
+  <form>
     <input id="radius" type="range" min="1" max="50" step="1" value="15" visibility=hidden />
     <input id="blur" type="range" min="1" max="50" step="1" value="13" visibility=hidden />
   </form>
+  <div id="overlay"
+    style="background-color: transparent; border-radius: 10px; font-size:small; border: 1px solid black; padding: 5px 10px; opacity: 0.5;">
+  </div>
   <script src="brasovair.js"></script>
 </body>
 

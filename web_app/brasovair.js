@@ -11,14 +11,111 @@ import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import Overlay from 'ol/Overlay';
 
 
+//var stopInterval = 3600;
+
+function getNOOfSecondsFrom12AM(){
+  var now = new Date(Date.now());
+  var start = new Date(now);
+  start.setHours(0);
+  start.setMinutes(0);
+  start.setSeconds(0);
+  var dif = now - start;
+  var deltaSecondsUnix = dif / 1000;
+  var deltaSeconds = Math.round(Math.abs(deltaSecondsUnix));
+  return deltaSeconds;
+};
+
+var startInterval = getNOOfSecondsFrom12AM();
+
 var urad_url = "https://m9sdldu09a.execute-api.us-east-1.amazonaws.com/uradbvair";
+var urad_url_pm25 = "https://data.uradmonitor.com/api/v1/devices/82000169/pm25/"+startInterval+"/";
+var urad_url_pm10 = "https://data.uradmonitor.com/api/v1/devices/82000169/pm10/"+startInterval+"/";
+var urad_url_temperature = "https://data.uradmonitor.com/api/v1/devices/82000169/temperature/"+startInterval+"/";
 var sensor_data = [];
-var color_palette = ["#52B947", "#F3EC19", "#F47D1E", "#ED1D24", "#7E2B7D"];
+//var color_palette = ["#52B947", "#F3EC19", "#F47D1E", "#ED1D24", "#7E2B7D"];
 var blur = document.getElementById('blur');
 var radius = document.getElementById('radius');
 var pmHeatmapScaller = 'pm25';
 var htmlTextOverlays = [];
 var openLayersOverlays = [];
+var pm25Vals = [];
+var pm10Vals = [];
+var pmTemperatureVals = [];
+
+var chart = new CanvasJS.Chart("chartContainer", {
+	animationEnabled: true,
+  theme: "light2",
+  backgroundColor: 'azure',
+	title: {
+		text: "Daily PM values"
+  },
+  toolTip: {
+    shared: true
+  },
+	axisY: {
+		title: "ug/m3",
+		titleFontSize: 24
+	},
+	data: [{
+    type: "spline",
+    name: "pm25",
+		yValueFormatString: "#,##### ug/m3",
+		dataPoints: pm25Vals
+  },
+  {
+    type: "spline",
+    name: "PM 10",
+		yValueFormatString: "#,##### ug/m3",
+		dataPoints: pm10Vals
+  },
+  {
+    type: "spline",
+    name: "Temperature",
+    axisYType: "secondary",
+		yValueFormatString: "#,##### C",
+		dataPoints: pmTemperatureVals
+	}]
+});
+
+
+function addPM25Data(data) {
+	for (var i = 0; i < data.length; i++) {
+		pm25Vals.push({
+			x: new Date(data[i].time*1000),
+			y: data[i].pm25
+		});
+  }
+  chart.render();
+}
+
+function addPM10Data(data) {
+	for (var i = 0; i < data.length; i++) {
+		pm10Vals.push({
+			x: new Date(data[i].time*1000),
+			y: data[i].pm10
+    });
+
+	}
+}
+function addTemperatureData(data) {
+	for (var i = 0; i < data.length; i++) {
+		pmTemperatureVals.push({
+			x: new Date(data[i].time*1000),
+			y: data[i].temperature
+		});
+	}
+  chart.render();
+}
+$.ajaxSetup({
+  headers : {
+    'X-User-hash': 'global',
+    'X-User-id': 'www'
+  }
+});
+
+$.getJSON(urad_url_pm25, addPM25Data);
+$.getJSON(urad_url_pm10, addPM10Data);
+$.getJSON(urad_url_temperature, addTemperatureData);
 
 
 function populateDOMwithOverlays(){
@@ -80,10 +177,9 @@ function flyTo(location, done) {
 var positionFeature = new Feature();
 var accuracyFeature = new Feature();
 var locationFeaturesSources = new VectorSource();
+locationFeaturesSources.addFeatures([positionFeature, accuracyFeature]);
 
 var sensorFeaturesSources = new VectorSource();
-//var pmFeaturesSources = new VectorSource();
-locationFeaturesSources.addFeatures([positionFeature, accuracyFeature]);
 
 var overlay = new Overlay({
   element: document.getElementById('overlay'),
@@ -176,9 +272,6 @@ function addPMValtoMap(index, pmValue, coord) {
       sensorFeature.setGeometryName(sensor[pmHeatmapScaller]);
       sensorFeature.setGeometry(sensor_coords);
       sensorFeature.setStyle(sensorStyle);
-      // map.getOverlays().getArray().slice(0).forEach(function(old_overlay) {
-      //   map.removeOverlay(old_overlay);
-      //   });
       addPMValtoMap(idx, sensor[pmHeatmapScaller], coordinates);
       idx++;
       //console.log(heatmap.getGradient());
