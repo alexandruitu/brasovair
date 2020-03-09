@@ -1,7 +1,7 @@
 import 'ol/ol.css';
 import Feature from 'ol/Feature';
 import Geolocation from 'ol/Geolocation';
-import { fromLonLat, transform } from 'ol/proj';
+import { fromLonLat, transform, toLonLat } from 'ol/proj';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import Point from 'ol/geom/Point';
@@ -9,9 +9,7 @@ import { Heatmap as HeatmapLayer, Tile as TileLayer, Vector as VectorLayer } fro
 import { OSM, Vector as VectorSource } from 'ol/source';
 import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import Overlay from 'ol/Overlay';
-
-
-//var stopInterval = 3600;
+import {getJSON, ajaxSetup} from 'jquery';
 
 function getNOOfSecondsFrom12AM(){
   var now = new Date(Date.now());
@@ -25,98 +23,85 @@ function getNOOfSecondsFrom12AM(){
   return deltaSeconds;
 };
 
-var startInterval = getNOOfSecondsFrom12AM();
-
 var urad_url = "https://m9sdldu09a.execute-api.us-east-1.amazonaws.com/uradbvair";
-var urad_url_pm25 = "https://data.uradmonitor.com/api/v1/devices/82000169/pm25/"+startInterval+"/";
-var urad_url_pm10 = "https://data.uradmonitor.com/api/v1/devices/82000169/pm10/"+startInterval+"/";
-var urad_url_temperature = "https://data.uradmonitor.com/api/v1/devices/82000169/temperature/"+startInterval+"/";
 var sensor_data = [];
-//var color_palette = ["#52B947", "#F3EC19", "#F47D1E", "#ED1D24", "#7E2B7D"];
 var blur = document.getElementById('blur');
 var radius = document.getElementById('radius');
 var pmHeatmapScaller = 'pm25';
 var htmlTextOverlays = [];
 var openLayersOverlays = [];
-var pm25Vals = [];
-var pm10Vals = [];
-var pmTemperatureVals = [];
+// var pm25Vals = [];
+// var pm10Vals = [];
+// var pmTemperatureVals = [];
 
-var chart = new CanvasJS.Chart("chartContainer", {
-	animationEnabled: true,
-  theme: "light2",
-  backgroundColor: 'azure',
-	title: {
-		text: "Daily PM values"
-  },
-  toolTip: {
-    shared: true
-  },
-	axisY: {
-		title: "ug/m3",
-		titleFontSize: 24
-	},
-	data: [{
-    type: "spline",
-    name: "pm25",
-		yValueFormatString: "#,##### ug/m3",
-		dataPoints: pm25Vals
-  },
-  {
-    type: "spline",
-    name: "PM 10",
-		yValueFormatString: "#,##### ug/m3",
-		dataPoints: pm10Vals
-  },
-  {
-    type: "spline",
-    name: "Temperature",
-    axisYType: "secondary",
-		yValueFormatString: "#,##### C",
-		dataPoints: pmTemperatureVals
-	}]
-});
+function createChartObject(){
+    var chart = new CanvasJS.Chart("chartContainer", {
+    animationEnabled: true,
+    theme: "light2",
+    backgroundColor: 'azure',
+    title: {
+      text: "Daily PM values"
+    },
+    toolTip: {
+      shared: true
+    },
+    axisY: {
+      title: "ug/m3",
+      titleFontSize: 24
+    },
+    data: [{
+      type: "spline",
+      name: "pm25",
+      yValueFormatString: "#,##### ug/m3"
+    },
+    {
+      type: "spline",
+      name: "PM 10",
+      yValueFormatString: "#,##### ug/m3"
+    },
+    {
+      type: "spline",
+      name: "Temperature",
+      axisYType: "secondary",
+      yValueFormatString: "#,##### C"
+    }]
+  });
+  return chart;
+};
 
+var chart = createChartObject();
 
 function addPM25Data(data) {
-	for (var i = 0; i < data.length; i++) {
-		pm25Vals.push({
-			x: new Date(data[i].time*1000),
-			y: data[i].pm25
-		});
-  }
-  chart.render();
+  let pm25Vals = data.map(obj => { return { x: new Date(obj.time*1000), y: obj.pm25}});
+  chart.data[0].set("dataPoints", pm25Vals);
 }
 
 function addPM10Data(data) {
-	for (var i = 0; i < data.length; i++) {
-		pm10Vals.push({
-			x: new Date(data[i].time*1000),
-			y: data[i].pm10
-    });
-
-	}
+  let pm10Vals = data.map(obj => { return { x: new Date(obj.time*1000), y: obj.pm10}});
+  chart.data[1].set("dataPoints", pm10Vals);
 }
 function addTemperatureData(data) {
-	for (var i = 0; i < data.length; i++) {
-		pmTemperatureVals.push({
-			x: new Date(data[i].time*1000),
-			y: data[i].temperature
-		});
-	}
-  chart.render();
+  let pmTemperatureVals = data.map(obj => { return { x: new Date(obj.time*1000), y: obj.temperature}});
+  chart.data[2].set("dataPoints", pmTemperatureVals);
 }
-$.ajaxSetup({
+ajaxSetup({
   headers : {
     'X-User-hash': 'global',
     'X-User-id': 'www'
   }
 });
 
-$.getJSON(urad_url_pm25, addPM25Data);
-$.getJSON(urad_url_pm10, addPM10Data);
-$.getJSON(urad_url_temperature, addTemperatureData);
+function plotChart(deviceid){
+ 
+  let startInterval = getNOOfSecondsFrom12AM();
+  let urad_url_pm25 =         "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/pm25/" + startInterval+"/";
+  let urad_url_pm10 =         "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/pm10/" + startInterval+"/";
+  let urad_url_temperature =  "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/temperature/" + startInterval+"/";
 
+  getJSON(urad_url_pm25, addPM25Data);
+  getJSON(urad_url_pm10, addPM10Data);
+  getJSON(urad_url_temperature, addTemperatureData);
+};
 
 function populateDOMwithOverlays(){
 
@@ -254,9 +239,28 @@ var makeRequest = function (url, method) {
   });
 };
 
-function addPMValtoMap(index, pmValue, coord) {
+function addPMValtoMap(index, pmValue, coord, deviceid) {
 
-  htmlTextOverlays[index].innerHTML = pmValue;
+  var curHtmlLabel = htmlTextOverlays[index];
+  curHtmlLabel.innerHTML = pmValue;
+  curHtmlLabel.id = deviceid;
+  curHtmlLabel.addEventListener('mouseover', function(){
+    let htmlEl = overlay.getElement(); 
+    htmlEl.innerHTML = this.id;
+    htmlEl.style.cursor = "wait";
+    overlay.setPosition(coord);
+    map.addOverlay(overlay);
+  })
+  curHtmlLabel.addEventListener('click', function(){
+    //chart  = createChartObject();
+    plotChart(this.id);    
+    chart.render();
+    chart.title.set("text", 'Dailiy Values for ' + this.id);    
+  })
+
+  curHtmlLabel.addEventListener('mouseleave', function(){
+    map.removeOverlay(overlay);
+  })
   let overlayPM = openLayersOverlays[index];
   overlayPM.setPosition(coord);
   map.addOverlay(overlayPM);
@@ -272,7 +276,7 @@ function addPMValtoMap(index, pmValue, coord) {
       sensorFeature.setGeometryName(sensor[pmHeatmapScaller]);
       sensorFeature.setGeometry(sensor_coords);
       sensorFeature.setStyle(sensorStyle);
-      addPMValtoMap(idx, sensor[pmHeatmapScaller], coordinates);
+      addPMValtoMap(idx, sensor[pmHeatmapScaller], coordinates, sensor['deviceid']);
       idx++;
       //console.log(heatmap.getGradient());
       sensorFeaturesSources.addFeature(sensorFeature);
@@ -282,10 +286,15 @@ function addPMValtoMap(index, pmValue, coord) {
   map.on('click', function (event) {
     // extract the spatial coordinate of the click event in map projection units
     var coord = event.coordinate;
-    var degrees = transform(coord, 'EPSG:3857', 'EPSG:4326');
-    overlay.getElement().innerHTML = [degrees[1], degrees[0]];
-    overlay.setPosition(coord);
-    map.addOverlay(overlay);
+    var degrees = toLonLat(coord);
+    for (let sensor of sensor_data) {
+      if ((sensor['longitude'] == degrees[1]) && (sensor['latitude'] == degrees[0])){
+        alert(sensor['deviceid']);
+      }
+    }
+    // overlay.getElement().innerHTML = [degrees[1], degrees[0]];
+    // overlay.setPosition(coord);
+    // map.addOverlay(overlay);
     //console.log(coord);
   });
 
@@ -321,15 +330,15 @@ function addPMValtoMap(index, pmValue, coord) {
     return document.getElementById(id);
   }
 
-  el('track').addEventListener('change', function () {
+  // el('track').addEventListener('change', function () {
     
-    geolocation.setTracking(this.checked);
-    if (this.checked == false){
-      map.getView().setCenter(fromLonLat([25.60, 45.674]));
-      map.getView().setZoom(13);
-    }
+  //   geolocation.setTracking(this.checked);
+  //   if (this.checked == false){
+  //     map.getView().setCenter(fromLonLat([25.60, 45.674]));
+  //     map.getView().setZoom(13);
+  //   }
 
-  });
+  // });
 
   // update the HTML page when the position changes.
   geolocation.on('change', function () {

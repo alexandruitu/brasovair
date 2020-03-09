@@ -8,21 +8,21 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
   <script
     src="https://cdn.polyfill.io/v2/polyfill.min.js?features=fetch,requestAnimationFrame,Element.prototype.classList,URL"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://code.jquery.com/jquery-latest.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
   <script src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
   <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
   <style>
     .map {
-      position: left;        
+      position: left;
       width: 100%;
       height: 550px;
-    /* left: 20px;
+      /* left: 20px;
     top: 20px; */
-    /* -moz-border-radius: 15px;
+      /* -moz-border-radius: 15px;
     border-radius: 15px; */
-    /* border: 1px solid black; 
+      /* border: 1px solid black; 
     overflow: hidden;
        */
     }
@@ -58,9 +58,9 @@
     </div>
   </div>
 
-  <div id="map" class="map container rounded"  style="background-color: azure;"></div>
+  <div id="map" class="map container rounded" style="background-color: azure;"></div>
 
-  <div id="chartContainer" style="height: 300px; width: 90%;"></div>
+  <div id="chartContainer" style="height: 300px; width: 100%;"></div>
   <div id="info" style="background-color: azure;">
     <p class="font-weight-bolder">&copy; <a href="mailto:alexandru.itu@gmail.com">Alexandru Itu</a>
       <p>
@@ -70,7 +70,7 @@
     <input id="blur" type="range" min="1" max="50" step="1" value="13" visibility=hidden />
   </form>
   <div id="overlay"
-    style="background-color: transparent; border-radius: 10px; font-size:small; border: 1px solid black; padding: 5px 10px; opacity: 0.5;">
+    style="background-color: transparent; border-radius: 10px; font-size:small; padding: 5px 10px; opacity: 0.8;">
   </div>
   <script src="brasovair.js"></script>
 </body>
