@@ -27,7 +27,7 @@ var urad_url = "https://m9sdldu09a.execute-api.us-east-1.amazonaws.com/uradbvair
 var sensor_data = [];
 var blur = document.getElementById('blur');
 var radius = document.getElementById('radius');
-var pmHeatmapScaller = 'pm25';
+var pmHeatmapScaller = 'avg_pm25';
 var htmlTextOverlays = [];
 var openLayersOverlays = [];
 // var pm25Vals = [];
@@ -130,32 +130,12 @@ var map = new Map({
   view: view
 });
 
-function flyTo(location, done) {
-  var duration = 1000;
-  var zoom = view.getZoom()+1;
-  var parts = 1;
-  var called = false;
-  function callback(complete) {
-    --parts;
-    if (called) {
-      return;
-    }
-    if (parts === 0 || !complete) {
-      called = true;
-      //done(complete);
-    }
-  }
+function flyTo(location, zoom) {
+
   view.animate({
     center: location,
-    duration: duration
-  }, callback);
-  view.animate({
-    zoom: zoom - 1,
-    duration: duration / 2
-  }, {
-    zoom: zoom,
-    duration: duration / 2
-  }, callback);
+    zoom:   zoom
+});
 }
 
 //location related
@@ -179,31 +159,6 @@ var heatmap = new HeatmapLayer({
   radius: parseInt(radius.value, 10)
   //gradient: color_palette
 });
-
-var sensorStyle = new Style({
-  image: new CircleStyle({
-    radius: 6,
-    fill: new Fill({
-      color: '#d12e57'
-    }),
-    stroke: new Stroke({
-      color: '#F10000',
-      width: 2
-    })
-  }),
-  text: new Text({
-    font: '12px Calibri,sans-serif',
-    fill: new Fill({
-      color: '#d12e57'
-    }),
-    text: "bla",
-    stroke: new Stroke({
-      color: '#F10000',
-      width: 3
-    })
-  })
-});
-
 
 var locationStyle = new Style({
   image: new CircleStyle({
@@ -275,28 +230,24 @@ function addPMValtoMap(index, pmValue, coord, deviceid) {
       let sensorFeature = new Feature();
       sensorFeature.setGeometryName(sensor[pmHeatmapScaller]);
       sensorFeature.setGeometry(sensor_coords);
-      sensorFeature.setStyle(sensorStyle);
-      addPMValtoMap(idx, sensor[pmHeatmapScaller], coordinates, sensor['deviceid']);
+      sensorFeature.setStyle(locationStyle);
+      addPMValtoMap(idx, sensor[pmHeatmapScaller], coordinates, sensor['id']);
       idx++;
       //console.log(heatmap.getGradient());
       sensorFeaturesSources.addFeature(sensorFeature);
     }
   };
 
-  map.on('click', function (event) {
-    // extract the spatial coordinate of the click event in map projection units
-    var coord = event.coordinate;
-    var degrees = toLonLat(coord);
-    for (let sensor of sensor_data) {
-      if ((sensor['longitude'] == degrees[1]) && (sensor['latitude'] == degrees[0])){
-        alert(sensor['deviceid']);
-      }
-    }
-    // overlay.getElement().innerHTML = [degrees[1], degrees[0]];
-    // overlay.setPosition(coord);
-    // map.addOverlay(overlay);
-    //console.log(coord);
-  });
+  // map.on('click', function (event) {
+  //   // extract the spatial coordinate of the click event in map projection units
+  //   var coord = event.coordinate;
+  //   var degrees = toLonLat(coord);
+  //   for (let sensor of sensor_data) {
+  //     if ((sensor['longitude'] == degrees[1]) && (sensor['latitude'] == degrees[0])){
+  //       alert(sensor['deviceid']);
+  //     }
+  //   }
+  // });
 
   document.addEventListener('DOMContentLoaded', (event) => {
     blur.style.display = 'none';
@@ -330,16 +281,6 @@ function addPMValtoMap(index, pmValue, coord, deviceid) {
     return document.getElementById(id);
   }
 
-  // el('track').addEventListener('change', function () {
-    
-  //   geolocation.setTracking(this.checked);
-  //   if (this.checked == false){
-  //     map.getView().setCenter(fromLonLat([25.60, 45.674]));
-  //     map.getView().setZoom(13);
-  //   }
-
-  // });
-
   // update the HTML page when the position changes.
   geolocation.on('change', function () {
     el('accuracy').innerText = geolocation.getAccuracy() + ' [m]';
@@ -361,13 +302,22 @@ function addPMValtoMap(index, pmValue, coord, deviceid) {
     accuracyFeature.setGeometry(geolocation.getAccuracyGeometry());
   });
 
+  
+  el('track').addEventListener('change', function () {
+    
+    geolocation.setTracking(this.checked);
+    if (this.checked == false){
+        flyTo(fromLonLat([25.60, 45.674]), 13);  
+        positionFeature.setGeometry(null);  
+    }
+
+  });
+
   geolocation.on('change:position', function () {
     let coordinates = geolocation.getPosition();
     positionFeature.setGeometry(coordinates ?
       new Point(coordinates) : null);
-    flyTo(coordinates);  
-
-    //positionFeature.getStyle().setText("ALEX");
+    flyTo(coordinates, 15);      
   });
 
   var blurHandler = function () {
