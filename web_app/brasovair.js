@@ -73,6 +73,7 @@ var chart = createChartObject();
 
 function addPM25Data(data) {
   let pm25Vals = data.map(obj => { return { x: new Date(obj.time*1000), y: obj.pm25}});
+  
   chart.data[0].set("dataPoints", pm25Vals);
 }
 
