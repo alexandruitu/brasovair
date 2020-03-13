@@ -9,12 +9,24 @@ import { Heatmap as HeatmapLayer, Tile as TileLayer, Vector as VectorLayer } fro
 import { OSM, Vector as VectorSource } from 'ol/source';
 import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import Overlay from 'ol/Overlay';
-import {getJSON, ajaxSetup} from 'jquery';
+import { getJSON, ajaxSetup } from 'jquery';
 
-function getNOOfSecondsFrom12AM(){
+function getNOOfSecondsFrom12AM() {
   var now = new Date(Date.now());
   var start = new Date(now);
   start.setHours(0);
+  start.setMinutes(0);
+  start.setSeconds(0);
+  var dif = now - start;
+  var deltaSecondsUnix = dif / 1000;
+  var deltaSeconds = Math.round(Math.abs(deltaSecondsUnix));
+  return deltaSeconds;
+};
+
+function getNOOfSecondsSinceLastHour() {
+  var now = new Date(Date.now());
+  var start = new Date(now);
+  start.setHours(start.getHours() - 1);
   start.setMinutes(0);
   start.setSeconds(0);
   var dif = now - start;
@@ -34,8 +46,8 @@ var openLayersOverlays = [];
 // var pm10Vals = [];
 // var pmTemperatureVals = [];
 
-function createChartObject(){
-    var chart = new CanvasJS.Chart("chartContainer", {
+function createChartObject() {
+  var chart = new CanvasJS.Chart("chartContainer", {
     animationEnabled: true,
     theme: "light2",
     backgroundColor: 'azure',
@@ -72,51 +84,110 @@ function createChartObject(){
 var chart = createChartObject();
 
 function addPM25Data(data) {
-  let pm25Vals = data.map(obj => { return { x: new Date(obj.time*1000), y: obj.pm25}});
-  
+  let pm25Vals = data.map(obj => { return { x: new Date(obj.time * 1000), y: obj.pm25 } });
+
   chart.data[0].set("dataPoints", pm25Vals);
 }
 
 function addPM10Data(data) {
-  let pm10Vals = data.map(obj => { return { x: new Date(obj.time*1000), y: obj.pm10}});
+  let pm10Vals = data.map(obj => { return { x: new Date(obj.time * 1000), y: obj.pm10 } });
   chart.data[1].set("dataPoints", pm10Vals);
 }
 function addTemperatureData(data) {
-  let pmTemperatureVals = data.map(obj => { return { x: new Date(obj.time*1000), y: obj.temperature}});
+  let pmTemperatureVals = data.map(obj => { return { x: new Date(obj.time * 1000), y: obj.temperature } });
   chart.data[2].set("dataPoints", pmTemperatureVals);
 }
 ajaxSetup({
-  headers : {
+  headers: {
     'X-User-hash': 'global',
     'X-User-id': 'www'
   }
 });
 
-function plotChart(deviceid){
- 
+function computeCAQI(data) {
+  let pm10 = data.map(obj => { return [obj.pm10] });
+  let pm10Vals = pm10.reduce((a, b) => parseInt(a, 10) + parseInt(b, 10));
+  
+  let avg = pm10Vals/data.length;
+  let selectedCAQIlevel = null;
+  if (avg > 0 & avg <= 25) {
+    jQuery("#very_low").addClass( "CAQI-row-highlight");
+    jQuery("#low").removeClass( "CAQI-row-highlight");
+    jQuery("#medium").removeClass( "CAQI-row-highlight");
+    jQuery("#high").removeClass( "CAQI-row-highlight");
+    jQuery("#very_high").removeClass( "CAQI-row-highlight");
+    selectedCAQIlevel = jQuery("#td_very_low");
+  };
+  if (avg > 25 & avg <= 50) {
+    jQuery("#very_low").removeClass( "CAQI-row-highlight");
+    jQuery("#low").addClass( "CAQI-row-highlight");
+    jQuery("#medium").removeClass( "CAQI-row-highlight");
+    jQuery("#high").removeClass( "CAQI-row-highlight");
+    jQuery("#very_high").removeClass( "CAQI-row-highlight");
+    selectedCAQIlevel = jQuery("#td_low");
+  };
+  if (avg > 50 & avg <= 75) {
+    jQuery("#very_low").removeClass( "CAQI-row-highlight");
+    jQuery("#low").removeClass( "CAQI-row-highlight");
+    jQuery("#medium").addClass( "CAQI-row-highlight");
+    jQuery("#high").removeClass( "CAQI-row-highlight");
+    jQuery("#very_high").removeClass( "CAQI-row-highlight");
+    selectedCAQIlevel = jQuery("#td_medium");
+  };
+  if (avg > 75 & avg <= 100) {
+    jQuery("#very_low").removeClass( "CAQI-row-highlight");
+    jQuery("#low").removeClass( "CAQI-row-highlight");
+    jQuery("#medium").removeClass( "CAQI-row-highlight");
+    jQuery("#high").addClass( "CAQI-row-highlight");
+    jQuery("#very_high").removeClass( "CAQI-row-highlight");
+    selectedCAQIlevel = jQuery("#td_high");
+  };
+  if (avg > 100) {
+    jQuery("#very_low").removeClass( "CAQI-row-highlight");
+    jQuery("#low").removeClass( "CAQI-row-highlight");
+    jQuery("#medium").removeClass( "CAQI-row-highlight");
+    jQuery("#high").removeClass( "CAQI-row-highlight");
+    jQuery("#very_high").addClass( "CAQI-row-highlight");
+    selectedCAQIlevel = jQuery("#td_very_high");
+  };
+
+  var dv = jQuery('#divCAQI');
+  jQuery('#divCAQI').show();
+  jQuery('#CAQIval').text('Common Air Quality Index (CAQI) -> ' + avg.toFixed(2));  
+  jQuery('#CAQIval').css("background-color", selectedCAQIlevel.css('backgroundColor'));
+
+};
+
+function plotChart(deviceid) {
+
   let startInterval = getNOOfSecondsFrom12AM();
-  let urad_url_pm25 =         "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/pm25/" + startInterval+"/";
-  let urad_url_pm10 =         "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/pm10/" + startInterval+"/";
-  let urad_url_temperature =  "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/temperature/" + startInterval+"/";
+  let urad_url_pm25 = "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/pm25/" + startInterval + "/";
+  let urad_url_pm10 = "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/pm10/" + startInterval + "/";
+  let urad_url_temperature = "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/temperature/" + startInterval + "/";
 
   getJSON(urad_url_pm25, addPM25Data);
   getJSON(urad_url_pm10, addPM10Data);
   getJSON(urad_url_temperature, addTemperatureData);
+
+  startInterval = getNOOfSecondsSinceLastHour();
+  // let urad_url_pm25 = "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/pm25/" + startInterval + "/";
+  urad_url_pm10 = "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/pm10/" + startInterval + "/";
+  getJSON(urad_url_pm10, computeCAQI);
 };
 
-function populateDOMwithOverlays(){
+function populateDOMwithOverlays() {
 
-  for (var idx = 0; idx<sensor_data.length; idx++){
+  for (var idx = 0; idx < sensor_data.length; idx++) {
     var newPM = document.createElement('div');
     newPM.style = "background-color: transparent;  font-weight: bold; opacity: 0.9";
-  
+
     var overlayPM = new Overlay({
       element: newPM,
       positioning: 'bottom-center'
     });
     htmlTextOverlays.push(newPM);
     openLayersOverlays.push(overlayPM);
-  
+
   }
 }
 
@@ -135,8 +206,8 @@ function flyTo(location, zoom) {
 
   view.animate({
     center: location,
-    zoom:   zoom
-});
+    zoom: zoom
+  });
 }
 
 //location related
@@ -200,21 +271,22 @@ function addPMValtoMap(index, pmValue, coord, deviceid) {
   var curHtmlLabel = htmlTextOverlays[index];
   curHtmlLabel.innerHTML = pmValue;
   curHtmlLabel.id = deviceid;
-  curHtmlLabel.addEventListener('mouseover', function(){
-    let htmlEl = overlay.getElement(); 
+  curHtmlLabel.addEventListener('mouseover', function () {
+    let htmlEl = overlay.getElement();
     htmlEl.innerHTML = this.id;
     htmlEl.style.cursor = "wait";
     overlay.setPosition(coord);
     map.addOverlay(overlay);
   })
-  curHtmlLabel.addEventListener('click', function(){
+  curHtmlLabel.addEventListener('click', function () {
     //chart  = createChartObject();
-    plotChart(this.id);    
+    plotChart(this.id);
     chart.render();
-    chart.title.set("text", 'Dailiy Values for ' + this.id);    
+    chart.title.set("text", 'Dailiy Values for ' + this.id);
+
   })
 
-  curHtmlLabel.addEventListener('mouseleave', function(){
+  curHtmlLabel.addEventListener('mouseleave', function () {
     map.removeOverlay(overlay);
   })
   let overlayPM = openLayersOverlays[index];
@@ -222,136 +294,137 @@ function addPMValtoMap(index, pmValue, coord, deviceid) {
   map.addOverlay(overlayPM);
 }
 
-  function updateHeatmap() {
-    var idx = 0;
-    for (let sensor of sensor_data) {
-      let latlong = [sensor['longitude'], sensor['latitude']];
-      let coordinates = fromLonLat(latlong);
-      let sensor_coords = new Point(coordinates);
-      let sensorFeature = new Feature();
-      sensorFeature.setGeometryName(sensor[pmHeatmapScaller]);
-      sensorFeature.setGeometry(sensor_coords);
-      sensorFeature.setStyle(locationStyle);
-      addPMValtoMap(idx, sensor[pmHeatmapScaller], coordinates, sensor['id']);
-      idx++;
-      //console.log(heatmap.getGradient());
-      sensorFeaturesSources.addFeature(sensorFeature);
-    }
-  };
-
-  // map.on('click', function (event) {
-  //   // extract the spatial coordinate of the click event in map projection units
-  //   var coord = event.coordinate;
-  //   var degrees = toLonLat(coord);
-  //   for (let sensor of sensor_data) {
-  //     if ((sensor['longitude'] == degrees[1]) && (sensor['latitude'] == degrees[0])){
-  //       alert(sensor['deviceid']);
-  //     }
-  //   }
-  // });
-
-  document.addEventListener('DOMContentLoaded', (event) => {
-    blur.style.display = 'none';
-    radius.style.display = 'none';
-    makeRequest(urad_url, 'GET').then(function (response) {
-      sensor_data = JSON.parse(response);
-      populateDOMwithOverlays();
-      updateHeatmap();
-    })
+function updateHeatmap() {
+  var idx = 0;
+  for (let sensor of sensor_data) {
+    let latlong = [sensor['longitude'], sensor['latitude']];
+    let coordinates = fromLonLat(latlong);
+    let sensor_coords = new Point(coordinates);
+    let sensorFeature = new Feature();
+    sensorFeature.setGeometryName(sensor[pmHeatmapScaller]);
+    sensorFeature.setGeometry(sensor_coords);
+    sensorFeature.setStyle(locationStyle);
+    addPMValtoMap(idx, sensor[pmHeatmapScaller], coordinates, sensor['id']);
+    idx++;
+    //console.log(heatmap.getGradient());
+    sensorFeaturesSources.addFeature(sensorFeature);
   }
-  );
+};
 
-  heatmap.getSource().on('addfeature', function (event) {
-    let pm = event.feature.getGeometryName();
-    let upperVal = 40;
-    if (pm > upperVal) {
-      pm = upperVal
-    }
-    var magnitude = parseFloat(pm) / upperVal;
-    //console.log(magnitude);
-    event.feature.set('weight', magnitude);
-    event.feature.set('radius', pm * 1, 5);
-  });
+// map.on('click', function (event) {
+//   // extract the spatial coordinate of the click event in map projection units
+//   var coord = event.coordinate;
+//   var degrees = toLonLat(coord);
+//   for (let sensor of sensor_data) {
+//     if ((sensor['longitude'] == degrees[1]) && (sensor['latitude'] == degrees[0])){
+//       alert(sensor['deviceid']);
+//     }
+//   }
+// });
 
-  var geolocation = new Geolocation({
-    trackingOptions: { enableHighAccuracy: true },
-    projection: view.getProjection()
-  });
+document.addEventListener('DOMContentLoaded', (event) => {
+  blur.style.display = 'none';
+  radius.style.display = 'none';
+  makeRequest(urad_url, 'GET').then(function (response) {
+    sensor_data = JSON.parse(response);
+    populateDOMwithOverlays();
+    updateHeatmap();
+    jQuery('#divCAQI').hide();
+  })
+}
+);
 
-  function el(id) {
-    return document.getElementById(id);
+heatmap.getSource().on('addfeature', function (event) {
+  let pm = event.feature.getGeometryName();
+  let upperVal = 40;
+  if (pm > upperVal) {
+    pm = upperVal
+  }
+  var magnitude = parseFloat(pm) / upperVal;
+  //console.log(magnitude);
+  event.feature.set('weight', magnitude);
+  event.feature.set('radius', pm * 1, 5);
+});
+
+var geolocation = new Geolocation({
+  trackingOptions: { enableHighAccuracy: true },
+  projection: view.getProjection()
+});
+
+function el(id) {
+  return document.getElementById(id);
+}
+
+// update the HTML page when the position changes.
+geolocation.on('change', function () {
+  el('accuracy').innerText = geolocation.getAccuracy() + ' [m]';
+  el('altitude').innerText = geolocation.getAltitude() + ' [m]';
+  el('altitudeAccuracy').innerText = geolocation.getAltitudeAccuracy() + ' [m]';
+  el('heading').innerText = geolocation.getHeading() + ' [rad]';
+  el('speed').innerText = geolocation.getSpeed() + ' [m/s]';
+
+});
+
+geolocation.on('error', function (error) {
+  var info = document.getElementById('info');
+  info.innerHTML = error.message;
+  info.style.display = '';
+});
+
+
+geolocation.on('change:accuracyGeometry', function () {
+  accuracyFeature.setGeometry(geolocation.getAccuracyGeometry());
+});
+
+
+el('track').addEventListener('change', function () {
+
+  geolocation.setTracking(this.checked);
+  if (this.checked == false) {
+    flyTo(fromLonLat([25.60, 45.674]), 13);
+    positionFeature.setGeometry(null);
   }
 
-  // update the HTML page when the position changes.
-  geolocation.on('change', function () {
-    el('accuracy').innerText = geolocation.getAccuracy() + ' [m]';
-    el('altitude').innerText = geolocation.getAltitude() + ' [m]';
-    el('altitudeAccuracy').innerText = geolocation.getAltitudeAccuracy() + ' [m]';
-    el('heading').innerText = geolocation.getHeading() + ' [rad]';
-    el('speed').innerText = geolocation.getSpeed() + ' [m/s]';
-    
-  });
+});
 
-  geolocation.on('error', function (error) {
-    var info = document.getElementById('info');
-    info.innerHTML = error.message;
-    info.style.display = '';
-  });
+geolocation.on('change:position', function () {
+  let coordinates = geolocation.getPosition();
+  positionFeature.setGeometry(coordinates ?
+    new Point(coordinates) : null);
+  flyTo(coordinates, 15);
+});
 
+var blurHandler = function () {
+  heatmap.setBlur(parseInt(blur.value, 10));
+};
+blur.addEventListener('input', blurHandler);
+blur.addEventListener('change', blurHandler);
 
-  geolocation.on('change:accuracyGeometry', function () {
-    accuracyFeature.setGeometry(geolocation.getAccuracyGeometry());
-  });
+var radiusHandler = function () {
+  heatmap.setRadius(parseInt(radius.value, 10));
+};
+radius.addEventListener('input', radiusHandler);
+radius.addEventListener('change', radiusHandler);
 
-  
-  el('track').addEventListener('change', function () {
-    
-    geolocation.setTracking(this.checked);
-    if (this.checked == false){
-        flyTo(fromLonLat([25.60, 45.674]), 13);  
-        positionFeature.setGeometry(null);  
-    }
-
-  });
-
-  geolocation.on('change:position', function () {
-    let coordinates = geolocation.getPosition();
-    positionFeature.setGeometry(coordinates ?
-      new Point(coordinates) : null);
-    flyTo(coordinates, 15);      
-  });
-
-  var blurHandler = function () {
-    heatmap.setBlur(parseInt(blur.value, 10));
-  };
-  blur.addEventListener('input', blurHandler);
-  blur.addEventListener('change', blurHandler);
-
-  var radiusHandler = function () {
-    heatmap.setRadius(parseInt(radius.value, 10));
-  };
-  radius.addEventListener('input', radiusHandler);
-  radius.addEventListener('change', radiusHandler);
-
-  var rad = document.getElementsByName('pmSelector');
-  var prev = null;
-  if (rad != null) {
-    for (var i = 0; i < rad.length; i++) {
-      rad[i].addEventListener('change', function () {
-        if (this !== prev) {
-          prev = this;
-        }
-        pmHeatmapScaller = this.id;
-        heatmap.getSource().clear();
-        makeRequest(urad_url, 'GET').then(function (response) {
-          sensor_data = JSON.parse(response);
-          updateHeatmap();
-        });
+var rad = document.getElementsByName('pmSelector');
+var prev = null;
+if (rad != null) {
+  for (var i = 0; i < rad.length; i++) {
+    rad[i].addEventListener('change', function () {
+      if (this !== prev) {
+        prev = this;
+      }
+      pmHeatmapScaller = this.id;
+      heatmap.getSource().clear();
+      makeRequest(urad_url, 'GET').then(function (response) {
+        sensor_data = JSON.parse(response);
+        updateHeatmap();
       });
-    };
-  }
+    });
+  };
+}
 
-  new VectorLayer({
-    map: map,
-    source: locationFeaturesSources
-  });
+new VectorLayer({
+  map: map,
+  source: locationFeaturesSources
+});

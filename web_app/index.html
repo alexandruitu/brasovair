@@ -26,6 +26,11 @@
     overflow: hidden;
        */
     }
+
+    .CAQI-row-highlight {
+      background-color: rgb(226, 205, 231);
+      border: solid thin;
+    }
   </style>
 </head>
 
@@ -62,12 +67,55 @@
 
   <div class="container-fluid">
     <div class="row">
-      <div class="col-lg-8" id="chartContainer" style="height: 300px; width: 50%;"></div>
-      
-      <div class="col-lg-4" style="background-color:pink;">
-        One of three columns
+      <div class="col-lg-8" id="chartContainer" style="height: 300px; width: 65%;"></div>
+      <div class="col-lg-4" id = "divCAQI" style="background-color:azure;">
+        <table class="table" style="text-align:center;" id='CAQI'>
+          <tbody>
+            <tr>
+              <th id='CAQIval' colspan="4">Common Air Quality Index (CAQI) </th>
+            </tr>
+            <tr >
+              <th colspan="2" ></th>
+              <th style="text-align:center;">PM<sub>10</sub></th>
+              <th style="text-align:center;">PM<sub>2.5</sub></th>
+            </tr>
+            <tr id='very_low'>
+              <td>Very low</td>
+              <td id = "td_very_low" style="background:#79bc6a;">0–25</td>
+              <td>0 – 25</td>
+              <td>0 – 15</td>
+            </tr>
+            <tr id='low'>
+              <td>Low</td>
+              <td id = "td_low" style="background:#bbcf4c;">25–50</td>
+              <td>25 – 50</td>
+              <td>15 – 30
+              </td>
+            </tr>
+            <tr id='medium'>
+              <td>Medium</td>
+              <td id = "td_medium" style="background:#eec20b;">50–75</td>
+              <td>50 - 90</td>
+              <td>30 – 55
+              </td>
+            </tr>
+            <tr id="high">
+              <td>High</td>
+              <td id = "td_high"style="background:#f29305;">75–100</td>
+              <td>90 – 180</td>
+              <td>55 – 110
+              </td>
+            </tr>
+            <tr id="very_high">
+              <td>Very high</td>
+              <td id = "td_very_high" style="background:#e8416f;">&gt;100</td>
+              <td>&gt;180</td>
+              <td>&gt;110
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      
     </div>
   </div>
   <!-- <div id="chartContainer" style="height: 300px; width: 100%;"></div>
