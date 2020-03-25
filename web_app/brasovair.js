@@ -11,31 +11,28 @@ import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import Overlay from 'ol/Overlay';
 import { plotChart, makeRequest, chart } from './utils.js';
 
-var urad_url = "https://m9sdldu09a.execute-api.us-east-1.amazonaws.com/uradbvair";
+var urad_url = "https://30qju7d6ea.execute-api.eu-central-1.amazonaws.com/urad";
 var sensor_data = [];
 var pmHeatmapScaller = 'avg_pm25';
 var htmlTextOverlays = [];
 var openLayersOverlays = [];
 
 function populateDOMwithOverlays() {
-
   for (var idx = 0; idx < sensor_data.length; idx++) {
     var newPM = document.createElement('div');
     newPM.style = "background-color: transparent;  font-weight: bold; opacity: 0.9";
-
     var overlayPM = new Overlay({
       element: newPM,
       positioning: 'bottom-center'
     });
     htmlTextOverlays.push(newPM);
     openLayersOverlays.push(overlayPM);
-
   }
 }
 
 var view = new View({
   center: fromLonLat([25.60, 45.674]),
-  zoom: 13
+  zoom: 7
 });
 
 var map = new Map({
@@ -136,6 +133,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
   makeRequest(urad_url, 'GET').then(function (response) {
     sensor_data = JSON.parse(response);
     populateDOMwithOverlays();
+    console.log(sensor_data)
     updateHeatmap();
     jQuery('#divCAQI').hide();
   })

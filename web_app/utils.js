@@ -114,7 +114,7 @@ export function createChartObject() {
     },
     data: [{
       type: "spline",
-      name: "pm25",
+      name: "PM 25",
       yValueFormatString: "#,##### ug/m3"
     },
     {
@@ -159,6 +159,7 @@ ajaxSetup({
 export function plotChart(deviceid) {
 
   let startInterval = getNOOfSecondsFrom12AM();
+  //console.log(startInterval)
   let urad_url_pm25 = "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/pm25/" + startInterval + "/";
   let urad_url_pm10 = "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/pm10/" + startInterval + "/";
   let urad_url_temperature = "https://data.uradmonitor.com/api/v1/devices/" + deviceid + "/temperature/" + startInterval + "/";
