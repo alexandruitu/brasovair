@@ -1,22 +1,34 @@
-# brasovair
+
+## brasovair
 This is a collection of tools for monitoring the air around Brasov area.
 It is based on collecting data from uRADMonitor sensors and displaying real-time data along with vrious statistics for PM (2.5, 10) values.
 
 Please link to the github project if you plan on using some of the source code.
 
-# building teh project
-1 - install Open Layers
+### building the project
+- install Open Layers
+```sh
 npm install ol --save
-2- Install react
+```
+- Install react
+```sh
 npm install react --save
-3 - instal Material UI
+```
+- instal Material UI
+```sh
 npm install proj4 @material-ui/core --save
-4 - crearte react app
+```
+ - crearte react app
+```sh
 npx create-react-app brasovair
-5 - start the dev server in brasovair folder
+```
+ - start the dev server in brasovair folder
+```sh
 npm start
-6 - open localhost:3000
-7 - open vscode and add this configuration in launch.json
+```
+ - open localhost:3000
+ - open vscode and add this configuration in launch.json
+    ```sh
     "configurations": [
         {
             "type": "chrome",
@@ -30,6 +42,8 @@ npm start
             }
         }
 
-8 - runs vscode and attach to Chrome for debugging
+- now run vscode and attach to Chrome for debugging
 
 !! ensure you run Chrome with debug port opened: 9222
+
+
