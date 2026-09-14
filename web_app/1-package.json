@@ -1,0 +1,16 @@
+{
+  "name": "geolocation",
+  "dependencies": {
+    "ajax": "0.0.4",
+    "jquery": "^3.4.1",
+    "ol": "6.2.1"
+  },
+  "devDependencies": {
+    "js-yaml": "^3.15.2",
+    "parcel": "^1.12.4"
+  },
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "parcel build --experimental-scope-hoisting --public-url . index.html"
+  }
+}
