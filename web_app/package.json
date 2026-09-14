@@ -6,6 +6,7 @@
     "ol": "6.2.1"
   },
   "devDependencies": {
+    "js-yaml": "^3.15.2",
     "parcel": "^1.12.4"
   },
   "scripts": {
